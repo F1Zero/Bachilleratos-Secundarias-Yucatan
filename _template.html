@@ -145,7 +145,7 @@ tr.sel{background:#fff7e6!important}
           </table>
         </div>
       </div>
-      <div class="nota">Toca un bachillerato para ver sus secundarias en el mapa. * = bachillerato privado o autónomo: no viene en la hoja 1 de 4.5 km (solo trae públicos); sus secundarias a 4.5 km se calcularon con las mismas secundarias del archivo, igual que la hoja 1.</div>
+      <div class="nota">Toca un bachillerato para ver sus secundarias en el mapa. * = calculado. 4.5 km: los bachilleratos privados y autónomos no vienen en la hoja 1 (solo trae públicos). 2 km: los Bachilleratos Nacionales «Margarita Maza» no vienen en el archivo de 2 km. En ambos casos se calcularon con las mismas secundarias del archivo y la distancia en línea recta.</div>
     </div>
 
     <div id="detalle">
@@ -169,6 +169,7 @@ tr.sel{background:#fff7e6!important}
           <span style="flex:1"></span>
           <button class="btn" id="bCsvDet" style="margin-bottom:6px">Descargar (CSV)</button>
         </div>
+        <div id="nota2" class="nota" style="display:none;margin:8px 12px">* Este bachillerato no viene en el archivo de 2 km. Las secundarias a 2 km se calcularon con las mismas secundarias del archivo y la distancia en línea recta (aproximado: el archivo usa coordenadas propias).</div>
         <div id="nota45" class="nota" style="display:none;margin:8px 12px">* Este bachillerato no viene en la hoja 1 de 4.5 km (solo trae públicos). Las secundarias a 4.5 km se calcularon con las mismas secundarias del archivo y la misma distancia en línea recta.</div>
         <div class="tablebox">
           <table id="tSec">
@@ -287,7 +288,7 @@ function render(zoom){
     <td class="hide-m">${esc(m.sb)}</td>
     <td>${esc(m.lc)}${m.lc!==m.mu?`<div class="mut">${esc(m.mu)}</div>`:''}<div class="mut">${esc(m.as)}</div></td>
     <td class="n hide-m">${fmt(m.ma)}</td>
-    <td class="n b2">${m.n2}</td><td class="n ${m.n45<0?'na':'b45'}">${m.n45<0?'–':m.n45}${m.h45===2?'<sup title="Calculado">*</sup>':''}</td></tr>`).join('')
+    <td class="n b2">${m.n2}${m.h2===2?'<sup title="Calculado">*</sup>':''}</td><td class="n ${m.n45<0?'na':'b45'}">${m.n45<0?'–':m.n45}${m.h45===2?'<sup title="Calculado">*</sup>':''}</td></tr>`).join('')
     :`<tr><td colspan="7" class="empty">No hay bachilleratos con estos filtros.</td></tr>`;
   $('tMs').tBodies[0].querySelectorAll('tr[data-i]').forEach(tr=>{
     tr.onclick=()=>seleccionar(+tr.dataset.i,true);
@@ -313,6 +314,7 @@ function seleccionar(i,zoom){
   $('dTags').innerHTML=[`<span class="tag ${m.so==='PÚBLICO'?'pub':'pri'}">${esc(m.so)}</span>`,
     `<span class="tag">${esc(m.sb)}</span>`, m.t?`<span class="tag">Turno ${esc(m.t)}</span>`:'',
     m.fi?`<span class="tag">${esc(m.fi)}</span>`:'',
+    m.h2===2?`<span class="tag" title="No viene en el archivo de 2 km; calculado con las mismas secundarias">2 km calculado*</span>`:'',
     m.h45===2?`<span class="tag" title="No viene en la hoja 1 (solo públicos); calculado con las mismas secundarias del archivo">4.5 km calculado*</span>`:''].join('');
   const f=(l,v)=>v?`<div><span>${l}</span>${esc(v)}</div>`:'';
   $('dInfo').innerHTML=f('Municipio',m.mu)+f('Localidad',m.lc)+f('Asentamiento',m.as)+f('Código postal',m.cp)
@@ -334,6 +336,7 @@ function tabla(){
   const m=MS[st.sel], arr=st.radio==='2'?m.s2:m.s45, enDos=new Set(m.s2.map(x=>x[0]));
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.r===st.radio));
   const tb=$('tSec').tBodies[0];
+  $('nota2').style.display=(st.radio==='2'&&m.h2===2)?'block':'none';
   $('nota45').style.display=(st.radio==='45'&&m.h45===2)?'block':'none';
   if(st.radio==='45'&&m.n45<0){tb.innerHTML=`<tr><td colspan="7" class="empty">Este bachillerato no está en el análisis de 4.5 km (hoja 1 solo incluye media superior pública).</td></tr>`;return;}
   tb.innerHTML=arr.length?arr.map(([s,k],j)=>{const x=SEC[s];return `<tr data-s="${s}">
@@ -390,8 +393,8 @@ function csv(nombre,filas){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
   a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
 }
-$('bCsvLista').onclick=()=>csv('resumen_bachilleratos.csv',[['CCT','Bachillerato','Turno','Sostenimiento','Subsistema','Municipio','Localidad','Asentamiento','CP','Matrícula','Docentes','Secundarias a 2 km','Secundarias a 4.5 km','Fuente 4.5 km','Latitud','Longitud']]
-  .concat(actual.map(m=>[m.c,m.n,m.t,m.so,m.sb,m.mu,m.lc,m.as,m.cp,m.ma,m.dc,m.n2,m.n45<0?'':m.n45,m.h45===2?'Calculado':'Hoja 1',m.la,m.lo])));
+$('bCsvLista').onclick=()=>csv('resumen_bachilleratos.csv',[['CCT','Bachillerato','Turno','Sostenimiento','Subsistema','Municipio','Localidad','Asentamiento','CP','Matrícula','Docentes','Secundarias a 2 km','Fuente 2 km','Secundarias a 4.5 km','Fuente 4.5 km','Latitud','Longitud']]
+  .concat(actual.map(m=>[m.c,m.n,m.t,m.so,m.sb,m.mu,m.lc,m.as,m.cp,m.ma,m.dc,m.n2,m.h2===2?'Calculado':'Archivo 2 km',m.n45<0?'':m.n45,m.h45===2?'Calculado':'Hoja 1',m.la,m.lo])));
 $('bCsvDet').onclick=()=>{const m=MS[st.sel];const enDos=new Set(m.s2.map(x=>x[0]));
   csv(`secundarias_${m.c}.csv`,[['Bachillerato CCT','Bachillerato','Radio','CCT secundaria','Secundaria','Tipo','Sostenimiento','Turno','Asentamiento','CP','Localidad','Municipio','Distancia km','Latitud','Longitud']]
   .concat(lista(m).sort((a,b)=>a.k-b.k).map(({s,k})=>{const x=SEC[s];return [m.c,m.n,enDos.has(s)?'2 km':'4.5 km',x.c,x.n,x.ti,x.so,x.t,x.as,x.cp,x.lc,x.mu,k,x.la,x.lo];})));};

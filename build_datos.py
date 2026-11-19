@@ -178,6 +178,14 @@ for m in ms:
         m["h45"] = 2
         m["s45"] = [[i, round(dist_km(m["la"], m["lo"], x["la"], x["lo"]), 2)]
                     for i, x in enumerate(sec) if dist_km(m["la"], m["lo"], x["la"], x["lo"]) <= 4.5]
+    # Bachilleratos que no vienen en el archivo de 2 km (p. ej. Bachilleratos Nacionales
+    # «Margarita Maza»): se calcula con las mismas secundarias. Es aproximado: el archivo usa
+    # coordenadas propias y no coincide exacto con este cálculo.
+    if not m["s2"] and m["la"]:
+        calc = [[i, round(dist_km(m["la"], m["lo"], x["la"], x["lo"]), 2)]
+                for i, x in enumerate(sec) if dist_km(m["la"], m["lo"], x["la"], x["lo"]) <= 2]
+        if calc:
+            m["s2"], m["h2"] = calc, 2
     m["mu"] = m["mu"] or "SIN DATO"
     m["lc"] = m["lc"] or "SIN DATO"
     m["s45"].sort(key=lambda x: x[1])

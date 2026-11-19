@@ -14,7 +14,7 @@ Página interactiva para consultar las escuelas de media superior de Yucatán y 
 
 ## Fuentes
 
-- **2 km:** «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical».
+- **2 km:** «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical». Los Bachilleratos Nacionales «Margarita Maza», que no vienen en ese archivo, se calcularon con las mismas secundarias y la distancia en línea recta (aproximado; marcados con \*).
 - **4.5 km:** «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2», hoja 1 (bachilleratos públicos). Para los bachilleratos privados y autónomos, que no vienen en esa hoja, el radio de 4.5 km se calculó con las mismas secundarias (marcados con \*). Ese cálculo reproduce exactamente la hoja 1 en los 370 bachilleratos públicos.
 - **Ubicación (municipio, localidad, asentamiento, domicilio):** catálogo SIC.
 
