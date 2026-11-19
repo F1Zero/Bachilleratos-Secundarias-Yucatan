@@ -84,6 +84,8 @@ def nuevo_ms(cct, nombre, lat, lon, carpeta):
     sost = partes[0] if partes else ""
     sub = partes[3] if len(partes) > 3 else ""
     d = buscar_cat(cct)
+    if not lat and d:  # bachillerato que no está en la lista maestra: coordenadas del catálogo
+        lat, lon = num(d.get("LATITUD")) or 0, num(d.get("LONGITUD")) or 0
     o = {
         "c": cct, "n": nombre, "la": round(lat, 6), "lo": round(lon, 6),
         "so": sost, "sb": sub, "t": TURNOS.get(cct[10:], ""),
