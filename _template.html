@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bachilleratos y Secundarias</title>
+<style>/*__LEAFLET_CSS__*/</style>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --soft:#f3f4f6;
+  --guinda:#AB2240; --guinda-soft:#fbe9ee; --azul:#2563eb; --azul-soft:#e8effd; --oscuro:#374151;
+  --ms:#111827; --ok:#047857;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font:14px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:8px 16px;background:#fff;border-bottom:4px solid var(--guinda)}
+header img{height:42px}
+header h1{font-size:18px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:12.5px}
+header .sp{flex:1}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn.dark{background:var(--oscuro);color:#fff;border-color:var(--oscuro)}
+.btn.dark:hover{background:#1f2937}
+main{display:grid;grid-template-columns:minmax(520px,47%) 1fr;height:calc(100% - 62px)}
+#panel{overflow:auto;padding:12px 14px 24px;border-right:1px solid var(--line)}
+#mapwrap{position:relative}
+#map{position:absolute;inset:0}
+.filtros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+.filtros label{min-width:0}
+.filtros select,.filtros input[type=search]{width:100%;min-width:0}
+.filtros label{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted);gap:3px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+.filtros select,.filtros input[type=search]{font:inherit;font-size:13.5px;color:var(--ink);padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;text-transform:none;letter-spacing:0;font-weight:400}
+.filtros .chk{flex-direction:row;align-items:center;gap:6px;text-transform:none;font-weight:500;color:var(--ink);font-size:13px;letter-spacing:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.kpi .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11.5px;color:var(--muted)}
+.kpi.k2 .v{color:var(--guinda)} .kpi.k45 .v{color:var(--azul)}
+.subs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chip{font-size:12px;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 9px;cursor:pointer}
+.chip b{font-variant-numeric:tabular-nums}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cardh{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-weight:600}
+.cardh .sp{flex:1}
+table{border-collapse:collapse;width:100%;font-size:12.8px}
+th{position:sticky;top:0;background:#fafafa;text-align:left;font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;padding:7px 8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:6px 8px;border-bottom:1px solid var(--soft);vertical-align:top}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f9fafb}
+tr.sel{background:#fff7e6!important}
+.cct{font-family:Consolas,ui-monospace,monospace;font-size:12px;color:var(--oscuro)}
+.nm{font-weight:600}
+.mut{color:var(--muted);font-size:12px}
+.b2{color:var(--guinda);font-weight:700} .b45{color:var(--azul);font-weight:700}
+.na{color:#9ca3af}
+.tablebox{max-height:calc(100vh - 360px);overflow:auto}
+/* detalle */
+#detalle{display:none}
+.det-top{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.det-top h2{margin:4px 0 2px;font-size:17px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.tag{font-size:11.5px;border-radius:6px;padding:2px 7px;background:var(--soft);border:1px solid var(--line)}
+.tag.pub{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+.tag.pri{background:#fef3c7;border-color:#fde68a;color:#92400e}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 16px;font-size:13px;margin-top:6px}
+.grid2 div span{color:var(--muted);font-size:11.5px;display:block;text-transform:uppercase;letter-spacing:.02em}
+.minis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.mini{border-radius:10px;padding:7px 10px;border:1px solid var(--line)}
+.mini .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.mini .l{font-size:11px;color:var(--muted)}
+.mini.r2{background:var(--guinda-soft);border-color:#f3c3cf}.mini.r2 .v{color:var(--guinda)}
+.mini.r45{background:var(--azul-soft);border-color:#c7d7fb}.mini.r45 .v{color:var(--azul)}
+.tabs{display:flex;gap:4px;padding:8px 10px 0;border-bottom:1px solid var(--line);background:#fafafa}
+.tab{border:1px solid transparent;border-bottom:none;background:none;padding:7px 12px;border-radius:8px 8px 0 0;font:inherit;font-weight:600;cursor:pointer;color:var(--muted)}
+.tab.on{background:#fff;border-color:var(--line);color:var(--ink);margin-bottom:-1px}
+.tab .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.empty{padding:18px;text-align:center;color:var(--muted)}
+.leg{background:#fff;padding:8px 10px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.2);font-size:12px;line-height:1.7}
+.leg i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.leg .ring{width:14px;height:14px;border-radius:50%;background:none;border:2px dashed;box-shadow:none}
+.leaflet-control-layers-toggle{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='1.8' stroke-linejoin='round'><path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5'/></svg>")!important;background-size:24px 24px}
+.leaflet-retina .leaflet-control-layers-toggle{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='1.8' stroke-linejoin='round'><path d='M12 3l9 5-9 5-9-5z'/><path d='M3 13l9 5 9-5'/></svg>")!important}
+.leaflet-popup-content{font-size:12.5px;line-height:1.45;margin:10px 12px}
+.leaflet-popup-content b{font-size:13px}
+.lbl{background:rgba(255,255,255,.9);border:none;box-shadow:none;font-size:11px;font-weight:600;padding:0 3px;color:#111}
+.lbl:before{display:none}
+.nota{font-size:11.5px;color:var(--muted);margin-top:8px}
+@media (max-width:900px){
+  main{grid-template-columns:1fr;grid-template-rows:45vh auto;height:auto}
+  #mapwrap{order:-1;height:45vh;position:sticky;top:0;z-index:5}
+  #panel{border-right:none;padding:10px 12px}
+  .filtros{grid-template-columns:1fr 1fr}
+  .kpis,.minis{grid-template-columns:1fr 1fr}
+  .tablebox{max-height:none}
+  header h1{font-size:15px} header .sub{display:none}
+  .hide-m{display:none}
+}
+@media print{header .btn,.filtros{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <img src="__LOGO__" alt="">
+  <div>
+    <h1>Bachilleratos y secundarias cercanas</h1>
+    <div class="sub">Escuelas de media superior con secundarias a 2 km y a 4.5 km de distancia · Yucatán</div>
+  </div>
+  <div class="sp"></div>
+  <button class="btn" id="bLimpiar" title="Quitar filtros y selección">Limpiar</button>
+</header>
+<main>
+  <section id="panel">
+    <div class="filtros">
+      <label>Municipio<select id="fMun"></select></label>
+      <label>Localidad<select id="fLoc"></select></label>
+      <label>Sostenimiento<select id="fSos"></select></label>
+      <label>Subsistema<select id="fSub"></select></label>
+      <label>Buscar (CCT, nombre, asentamiento)<input id="fTxt" type="search" placeholder="Ej. COBAY, 31ECB…"></label>
+      <label class="chk"><input type="checkbox" id="fCon"> Solo con secundarias a 2 km</label>
+    </div>
+
+    <div id="lista">
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="kMs">0</div><div class="l">Bachilleratos</div></div>
+        <div class="kpi"><div class="v" id="kMat">0</div><div class="l">Matrícula bachillerato</div></div>
+        <div class="kpi k2"><div class="v" id="k2">0</div><div class="l">Secundarias a 2 km (distintas)</div></div>
+        <div class="kpi k45"><div class="v" id="k45">0</div><div class="l">Secundarias a 4.5 km (distintas)</div></div>
+      </div>
+      <div class="subs" id="subs"></div>
+      <div class="card">
+        <div class="cardh"><span id="tTitulo">Bachilleratos</span><span class="sp"></span>
+          <button class="btn" id="bCsvLista">Descargar resumen (CSV)</button></div>
+        <div class="tablebox">
+          <table id="tMs">
+            <thead><tr>
+              <th data-k="c">CCT</th><th data-k="n">Bachillerato</th><th data-k="sb" class="hide-m">Subsistema</th>
+              <th data-k="lc">Localidad / asentamiento</th><th data-k="ma" class="n hide-m">Matrícula</th>
+              <th data-k="n2" class="n" title="Secundarias a 2 km">2 km</th><th data-k="n45" class="n" title="Secundarias a 4.5 km">4.5 km</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="nota">Toca un bachillerato para ver sus secundarias en el mapa. * = bachillerato privado o autónomo: no viene en la hoja 1 de 4.5 km (solo trae públicos); sus secundarias a 4.5 km se calcularon con las mismas secundarias del archivo, igual que la hoja 1.</div>
+    </div>
+
+    <div id="detalle">
+      <button class="btn" id="bVolver">← Volver a la lista</button>
+      <div class="det-top" style="margin-top:10px">
+        <div class="cct" id="dCct"></div>
+        <h2 id="dNom"></h2>
+        <div class="tags" id="dTags"></div>
+        <div class="grid2" id="dInfo"></div>
+        <div class="minis">
+          <div class="mini r2"><div class="v" id="d2">0</div><div class="l">Secundarias a 2 km</div></div>
+          <div class="mini r45"><div class="v" id="d45">0</div><div class="l">Secundarias a 4.5 km</div></div>
+          <div class="mini"><div class="v" id="dMat">–</div><div class="l">Matrícula</div></div>
+          <div class="mini"><div class="v" id="dDoc">–</div><div class="l">Docentes</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tabs">
+          <button class="tab on" data-r="2"><span class="dot" style="background:var(--guinda)"></span>A 2 km (<span id="tn2">0</span>)</button>
+          <button class="tab" data-r="45"><span class="dot" style="background:var(--azul)"></span>A 4.5 km (<span id="tn45">0</span>)</button>
+          <span style="flex:1"></span>
+          <button class="btn" id="bCsvDet" style="margin-bottom:6px">Descargar (CSV)</button>
+        </div>
+        <div id="nota45" class="nota" style="display:none;margin:8px 12px">* Este bachillerato no viene en la hoja 1 de 4.5 km (solo trae públicos). Las secundarias a 4.5 km se calcularon con las mismas secundarias del archivo y la misma distancia en línea recta.</div>
+        <div class="tablebox">
+          <table id="tSec">
+            <thead><tr><th class="n">#</th><th>CCT</th><th>Secundaria</th><th class="hide-m">Tipo</th>
+              <th>Asentamiento</th><th class="hide-m">Localidad / municipio</th><th class="n">Dist.</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="nota">Fuentes: 2 km — «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical»; 4.5 km — «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2» (hoja 1); datos de ubicación — catálogo SIC. Distancia en línea recta.</div>
+    </div>
+  </section>
+  <section id="mapwrap"><div id="map"></div></section>
+</main>
+
+<script>/*__LEAFLET_JS__*/</script>
+<script>/*__DATA__*/</script>
+<script>
+(function(){
+const MS=DATA.ms, SEC=DATA.sec;
+const $=id=>document.getElementById(id);
+const fmt=n=>(n==null||n==='')?'–':Number(n).toLocaleString('es-MX');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+MS.forEach((m,i)=>{m.i=i;m.n2=m.s2.length;m.n45=m.h45?m.s45.length:-1;
+  m.q=norm([m.c,m.n,m.sb,m.as,m.lc,m.mu,m.cp].join(' '));});
+const C2='#AB2240', C45='#2563eb';
+const colSost={'PÚBLICO':'#047857','PRIVADO':'#d97706','AUTÓNOMO':'#7c3aed'};
+
+/* ---------- mapa ---------- */
+const map=L.map('map',{zoomControl:true}).setView([20.85,-89.0],8); window._map=map;
+
+const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/';
+const T=(p,o)=>L.tileLayer(ESRI+p+'/MapServer/tile/{z}/{y}/{x}',Object.assign({maxZoom:19,maxNativeZoom:16,attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap'},o||{}));
+const claro=L.layerGroup([T('Canvas/World_Light_Gray_Base'),T('Canvas/World_Light_Gray_Reference',{zIndex:5})]).addTo(map);
+const calles=T('World_Street_Map',{maxNativeZoom:19});
+const sat=L.layerGroup([T('World_Imagery',{maxNativeZoom:19}),T('Reference/World_Boundaries_and_Places',{zIndex:5,maxNativeZoom:19})]);
+L.control.layers({'Mapa claro':claro,'Calles':calles,'Satélite':sat},null,{position:'topright'}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+const capaMs=L.featureGroup().addTo(map), capaSel=L.featureGroup().addTo(map);
+const leg=L.control({position:'bottomright'});
+leg.onAdd=()=>{const d=L.DomUtil.create('div','leg');d.id='leg';return d;};
+leg.addTo(map);
+function leyenda(sel){
+  $('leg').innerHTML=sel?
+    `<div><i style="background:#111827;width:14px;height:14px"></i>Bachillerato seleccionado</div>
+     <div><i style="background:${C2}"></i>Secundaria a ≤ 2 km</div>
+     <div><i style="background:${C45}"></i>Secundaria a 2–4.5 km</div>
+     <div><i class="ring" style="border-color:${C2}"></i>Radio 2 km</div>
+     <div><i class="ring" style="border-color:${C45}"></i>Radio 4.5 km</div>`:
+    `<div><b>Bachilleratos</b></div>`+Object.entries(colSost).map(([k,c])=>`<div><i style="background:${c}"></i>${k[0]+k.slice(1).toLowerCase()}</div>`).join('');
+}
+const mkMs={};
+MS.forEach(m=>{
+  if(!m.la) return;
+  const mk=L.circleMarker([m.la,m.lo],{radius:6,color:'#fff',weight:1.5,fillColor:colSost[m.so]||'#6b7280',fillOpacity:.95});
+  mk.bindTooltip(`<b>${esc(m.n)}</b><br>${esc(m.c)} · ${esc(m.sb)}<br>2 km: ${m.n2} · 4.5 km: ${m.n45<0?'–':m.n45}`,{direction:'top'});
+  mk.on('click',()=>seleccionar(m.i,true));
+  mkMs[m.i]=mk;
+});
+
+/* ---------- filtros ---------- */
+const st={mun:'',loc:'',sos:'',sub:'',txt:'',con:false,sort:'n2',dir:-1,sel:null,radio:'2'};
+function opts(sel,vals,todos){sel.innerHTML=`<option value="">${todos}</option>`+vals.map(v=>`<option>${esc(v)}</option>`).join('');}
+const uniq=a=>[...new Set(a)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
+opts($('fMun'),uniq(MS.map(m=>m.mu)),'Todos los municipios');
+opts($('fSos'),uniq(MS.map(m=>m.so)),'Todos');
+function llenarLoc(){
+  const v=uniq(MS.filter(m=>!st.mun||m.mu===st.mun).map(m=>m.lc));
+  opts($('fLoc'),v,'Todas las localidades'); if(!v.includes(st.loc)) st.loc=''; $('fLoc').value=st.loc;
+}
+function llenarSub(){
+  const v=uniq(MS.filter(m=>!st.sos||m.so===st.sos).map(m=>m.sb));
+  opts($('fSub'),v,'Todos'); if(!v.includes(st.sub)) st.sub=''; $('fSub').value=st.sub;
+}
+llenarLoc(); llenarSub();
+function filtrados(ignSub){
+  const q=norm(st.txt);
+  return MS.filter(m=>(!st.mun||m.mu===st.mun)&&(!st.loc||m.lc===st.loc)&&(!st.sos||m.so===st.sos)
+    &&(ignSub||!st.sub||m.sb===st.sub)&&(!st.con||m.n2>0)&&(!q||m.q.includes(q)));
+}
+$('fMun').onchange=e=>{st.mun=e.target.value;llenarLoc();render(true);};
+$('fLoc').onchange=e=>{st.loc=e.target.value;render(true);};
+$('fSos').onchange=e=>{st.sos=e.target.value;llenarSub();render(true);};
+$('fSub').onchange=e=>{st.sub=e.target.value;render(true);};
+$('fCon').onchange=e=>{st.con=e.target.checked;render(false);};
+let tt;$('fTxt').oninput=e=>{clearTimeout(tt);tt=setTimeout(()=>{st.txt=e.target.value;render(true);},200);};
+$('bLimpiar').onclick=()=>{Object.assign(st,{mun:'',loc:'',sos:'',sub:'',txt:'',con:false});
+  $('fMun').value=$('fSos').value='';$('fTxt').value='';$('fCon').checked=false;llenarLoc();llenarSub();volver();render(true);};
+document.querySelectorAll('#tMs th').forEach(th=>th.onclick=()=>{
+  const k=th.dataset.k; if(st.sort===k) st.dir*=-1; else {st.sort=k;st.dir=(k==='n2'||k==='n45'||k==='ma')?-1:1;} render(false);});
+
+/* ---------- lista / resumen ---------- */
+let actual=[];
+function render(zoom){
+  actual=filtrados(false);
+  const k=st.sort,d=st.dir;
+  actual.sort((a,b)=>{let x=a[k],y=b[k];if(x==null)x=-1;if(y==null)y=-1;
+    return (typeof x==='number'?(x-y):String(x).localeCompare(String(y),'es'))*d || a.n.localeCompare(b.n,'es');});
+  const s2=new Set(),s45=new Set();let mat=0;
+  actual.forEach(m=>{m.s2.forEach(x=>s2.add(x[0]));m.s45.forEach(x=>s45.add(x[0]));mat+=m.ma||0;});
+  $('kMs').textContent=fmt(actual.length);$('kMat').textContent=fmt(mat);
+  $('k2').textContent=fmt(s2.size);$('k45').textContent=fmt(s45.size);
+  const lugar=st.loc?`${st.loc}, ${st.mun||''}`:(st.mun||'Yucatán');
+  $('tTitulo').textContent=`Bachilleratos · ${lugar.replace(/, $/,'')}`;
+  // chips de subsistema
+  const cnt={};filtrados(true).forEach(m=>cnt[m.sb]=(cnt[m.sb]||0)+1);
+  $('subs').innerHTML=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([s,n])=>
+    `<span class="chip${st.sub===s?' on':''}" data-s="${esc(s)}">${esc(s||'S/D')} <b>${n}</b></span>`).join('');
+  $('subs').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{st.sub=st.sub===c.dataset.s?'':c.dataset.s;$('fSub').value=st.sub;render(true);});
+  document.querySelectorAll('#tMs th').forEach(th=>{th.textContent=th.textContent.replace(/ [▲▼]$/,'');
+    if(th.dataset.k===st.sort) th.textContent+=st.dir>0?' ▲':' ▼';});
+  $('tMs').tBodies[0].innerHTML=actual.length?actual.map(m=>`<tr data-i="${m.i}"${st.sel===m.i?' class="sel"':''}>
+    <td class="cct">${esc(m.c)}</td>
+    <td><div class="nm">${esc(m.n)}</div><div class="mut">${esc(m.t)}${m.so!=='PÚBLICO'?' · '+esc(m.so):''}</div></td>
+    <td class="hide-m">${esc(m.sb)}</td>
+    <td>${esc(m.lc)}${m.lc!==m.mu?`<div class="mut">${esc(m.mu)}</div>`:''}<div class="mut">${esc(m.as)}</div></td>
+    <td class="n hide-m">${fmt(m.ma)}</td>
+    <td class="n b2">${m.n2}</td><td class="n ${m.n45<0?'na':'b45'}">${m.n45<0?'–':m.n45}${m.h45===2?'<sup title="Calculado">*</sup>':''}</td></tr>`).join('')
+    :`<tr><td colspan="7" class="empty">No hay bachilleratos con estos filtros.</td></tr>`;
+  $('tMs').tBodies[0].querySelectorAll('tr[data-i]').forEach(tr=>{
+    tr.onclick=()=>seleccionar(+tr.dataset.i,true);
+    tr.onmouseenter=()=>{const mk=mkMs[tr.dataset.i];if(mk&&st.sel==null){mk.setStyle({radius:10});mk.bringToFront();}};
+    tr.onmouseleave=()=>{const mk=mkMs[tr.dataset.i];if(mk)mk.setStyle({radius:6});};
+  });
+  if(st.sel==null) pintarMs(zoom);
+}
+function pintarMs(zoom){
+  capaMs.clearLayers();
+  actual.forEach(m=>{if(mkMs[m.i]) capaMs.addLayer(mkMs[m.i]);});
+  leyenda(false);
+  if(zoom&&capaMs.getLayers().length){
+    const b=capaMs.getBounds(); map.stop(); map.fitBounds(b.pad(.15),{maxZoom:14,animate:false});
+  }
+}
+
+/* ---------- detalle ---------- */
+function seleccionar(i,zoom){
+  st.sel=i; const m=MS[i];
+  $('lista').style.display='none';$('detalle').style.display='block';$('panel').scrollTop=0;
+  $('dCct').textContent=m.c;$('dNom').textContent=m.n;
+  $('dTags').innerHTML=[`<span class="tag ${m.so==='PÚBLICO'?'pub':'pri'}">${esc(m.so)}</span>`,
+    `<span class="tag">${esc(m.sb)}</span>`, m.t?`<span class="tag">Turno ${esc(m.t)}</span>`:'',
+    m.fi?`<span class="tag">${esc(m.fi)}</span>`:'',
+    m.h45===2?`<span class="tag" title="No viene en la hoja 1 (solo públicos); calculado con las mismas secundarias del archivo">4.5 km calculado*</span>`:''].join('');
+  const f=(l,v)=>v?`<div><span>${l}</span>${esc(v)}</div>`:'';
+  $('dInfo').innerHTML=f('Municipio',m.mu)+f('Localidad',m.lc)+f('Asentamiento',m.as)+f('Código postal',m.cp)
+    +f('Domicilio',m.do)+f('Teléfono',m.te)+f('Coordenadas',m.la?`${m.la}, ${m.lo}`:'');
+  $('d2').textContent=m.n2;$('d45').textContent=m.n45<0?'–':m.n45;
+  $('dMat').textContent=fmt(m.ma);$('dDoc').textContent=fmt(m.dc);
+  $('tn2').textContent=m.n2;$('tn45').textContent=m.n45<0?'–':m.n45;
+  if(st.radio==='45'&&m.n45<0) st.radio='2';
+  tabla();pintarSel(m,zoom);
+}
+function lista(m){
+  // lista combinada para el mapa: 4.5 km + las de 2 km (marcando dentro de 2 km)
+  const d=new Map();
+  m.s45.forEach(([s,k])=>d.set(s,{s,k,en2:false}));
+  m.s2.forEach(([s,k])=>d.set(s,{s,k,en2:true}));
+  return [...d.values()];
+}
+function tabla(){
+  const m=MS[st.sel], arr=st.radio==='2'?m.s2:m.s45, enDos=new Set(m.s2.map(x=>x[0]));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.r===st.radio));
+  const tb=$('tSec').tBodies[0];
+  $('nota45').style.display=(st.radio==='45'&&m.h45===2)?'block':'none';
+  if(st.radio==='45'&&m.n45<0){tb.innerHTML=`<tr><td colspan="7" class="empty">Este bachillerato no está en el análisis de 4.5 km (hoja 1 solo incluye media superior pública).</td></tr>`;return;}
+  tb.innerHTML=arr.length?arr.map(([s,k],j)=>{const x=SEC[s];return `<tr data-s="${s}">
+    <td class="n mut">${j+1}</td><td class="cct">${esc(x.c)}</td>
+    <td><div class="nm">${esc(x.n)}</div><div class="mut">${esc(x.so)}${x.t?' · '+esc(x.t):''}</div></td>
+    <td class="hide-m">${esc(x.ti)}</td>
+    <td>${esc(x.as)}${x.cp?`<div class="mut">CP ${esc(x.cp)}</div>`:''}</td>
+    <td class="hide-m">${esc(x.lc)}<div class="mut">${esc(x.mu)}</div></td>
+    <td class="n"><span class="${enDos.has(s)?'b2':'b45'}">${k.toFixed(2)} km</span></td></tr>`;}).join('')
+    :`<tr><td colspan="7" class="empty">Sin secundarias en este radio.</td></tr>`;
+  tb.querySelectorAll('tr[data-s]').forEach(tr=>{
+    const mk=mkSec[tr.dataset.s];
+    tr.onclick=()=>{if(mk){map.setView(mk.getLatLng(),Math.max(map.getZoom(),15));mk.openPopup();}};
+    tr.onmouseenter=()=>{if(mk){mk.setStyle({radius:10,weight:3});mk.bringToFront();}};
+    tr.onmouseleave=()=>{if(mk)mk.setStyle({radius:7,weight:2});};
+  });
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{st.radio=t.dataset.r;tabla();});
+let mkSec={};
+function pintarSel(m,zoom){
+  capaMs.clearLayers();capaSel.clearLayers();mkSec={};leyenda(true);
+  // otros bachilleratos del filtro, tenues
+  actual.forEach(o=>{if(o.i!==m.i&&o.la) L.circleMarker([o.la,o.lo],{radius:4,color:'#9ca3af',weight:1,fillColor:'#d1d5db',fillOpacity:.8})
+    .bindTooltip(esc(o.n)).on('click',()=>seleccionar(o.i,true)).addTo(capaSel);});
+  if(!m.la) return;
+  const c45=L.circle([m.la,m.lo],{radius:4500,color:C45,weight:2,dashArray:'6 6',fillColor:C45,fillOpacity:.04,interactive:false}).addTo(capaSel);
+  L.circle([m.la,m.lo],{radius:2000,color:C2,weight:2,dashArray:'6 6',fillColor:C2,fillOpacity:.06,interactive:false}).addTo(capaSel);
+  lista(m).sort((a,b)=>b.k-a.k).forEach(({s,k,en2})=>{
+    const x=SEC[s]; if(!x.la) return;
+    const mk=L.circleMarker([x.la,x.lo],{radius:7,color:'#fff',weight:2,fillColor:en2?C2:C45,fillOpacity:.95}).addTo(capaSel);
+    mk.bindPopup(`<b>${esc(x.n)}</b><br><span class="cct">${esc(x.c)}</span> · ${esc(x.ti)} · ${esc(x.so)}<br>
+      Asentamiento: ${esc(x.as)}${x.cp?' (CP '+esc(x.cp)+')':''}<br>${esc(x.lc)}, ${esc(x.mu)}<br>
+      <b style="color:${en2?C2:C45}">${k.toFixed(2)} km</b> del bachillerato`);
+    mk.bindTooltip(esc(x.n),{direction:'top'});
+    mkSec[s]=mk;
+  });
+  const star=L.marker([m.la,m.lo],{zIndexOffset:1000,icon:L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],
+    html:`<svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6z" fill="#111827" stroke="#fff" stroke-width="1.6"/></svg>`})})
+    .bindPopup(`<b>${esc(m.n)}</b><br>${esc(m.c)} · ${esc(m.sb)}<br>${esc(m.as)}, ${esc(m.lc)}, ${esc(m.mu)}<br>
+      <span style="color:${C2}">2 km: <b>${m.n2}</b></span> · <span style="color:${C45}">4.5 km: <b>${m.n45<0?'–':m.n45}</b></span>`)
+    .bindTooltip(esc(m.n),{permanent:true,direction:'right',offset:[12,0],className:'lbl'}).addTo(capaSel);
+  if(zoom){map.stop();map.fitBounds(L.latLng(m.la,m.lo).toBounds(9200),{padding:[16,16],animate:false});}
+  render(false);
+}
+function volver(){
+  st.sel=null;capaSel.clearLayers();mkSec={};
+  $('detalle').style.display='none';$('lista').style.display='block';render(false);pintarMs(false);
+}
+$('bVolver').onclick=volver;
+
+/* ---------- CSV ---------- */
+function csv(nombre,filas){
+  const t='﻿'+filas.map(r=>r.map(v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
+  a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+$('bCsvLista').onclick=()=>csv('resumen_bachilleratos.csv',[['CCT','Bachillerato','Turno','Sostenimiento','Subsistema','Municipio','Localidad','Asentamiento','CP','Matrícula','Docentes','Secundarias a 2 km','Secundarias a 4.5 km','Fuente 4.5 km','Latitud','Longitud']]
+  .concat(actual.map(m=>[m.c,m.n,m.t,m.so,m.sb,m.mu,m.lc,m.as,m.cp,m.ma,m.dc,m.n2,m.n45<0?'':m.n45,m.h45===2?'Calculado':'Hoja 1',m.la,m.lo])));
+$('bCsvDet').onclick=()=>{const m=MS[st.sel];const enDos=new Set(m.s2.map(x=>x[0]));
+  csv(`secundarias_${m.c}.csv`,[['Bachillerato CCT','Bachillerato','Radio','CCT secundaria','Secundaria','Tipo','Sostenimiento','Turno','Asentamiento','CP','Localidad','Municipio','Distancia km','Latitud','Longitud']]
+  .concat(lista(m).sort((a,b)=>a.k-b.k).map(({s,k})=>{const x=SEC[s];return [m.c,m.n,enDos.has(s)?'2 km':'4.5 km',x.c,x.n,x.ti,x.so,x.t,x.as,x.cp,x.lc,x.mu,k,x.la,x.lo];})));};
+
+render(true);
+})();
+</script>
+</body>
+</html>
