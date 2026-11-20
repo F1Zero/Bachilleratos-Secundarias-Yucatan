@@ -179,7 +179,7 @@ tr.sel{background:#fff7e6!important}
           </table>
         </div>
       </div>
-      <div class="nota">Distancias en km. Lineal = línea recta; Ruta = camino más corto en auto por carretera y calles (OSRM con datos de OpenStreetMap). Fuentes: lista de planteles del proceso de ingreso 2027 (solo qué planteles); 2 km — «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical»; 4.5 km — «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2» (hoja 1); datos de planteles y ubicación — catálogo SIC. Zona Metropolitana = Mérida, Kanasín, Umán, Conkal y Ucú. Toda secundaria sin plantel a 4.5 km se asigna al más cercano (se indica en la ficha).</div>
+      <div class="nota">Distancias en km. Lineal = línea recta; Ruta = camino más corto en auto por carretera y calles (OSRM con datos de OpenStreetMap). Fuentes: lista de planteles del proceso de ingreso 2027 (solo qué planteles); 2 km — «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical»; 4.5 km — «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2» (hoja 1); datos de planteles y ubicación — catálogo SIC. Zona Metropolitana = Mérida, Kanasín, Umán, Conkal y Ucú. Solo secundarias activas del catálogo SIC; las activas que no vienen en los archivos se agregaron con distancia calculada (marcadas con «SIC»). Toda secundaria sin plantel a 4.5 km se asigna al más cercano (se indica en la ficha).</div>
     </div>
   </section>
   <section id="mapwrap"><div id="map"></div></section>
@@ -343,7 +343,7 @@ function tabla(){
   if(st.radio==='45'&&m.n45<0){tb.innerHTML=`<tr><td colspan="8" class="empty">Sin dato de 4.5 km.</td></tr>`;return;}
   tb.innerHTML=arr.length?arr.map(([s,k,r],j)=>{const x=SEC[s];return `<tr data-s="${s}">
     <td class="n mut">${j+1}</td><td class="cct">${esc(x.c)}</td>
-    <td><div class="nm">${esc(x.n)}</div><div class="mut">${esc(x.so)}${x.t?' · '+esc(x.t):''}</div></td>
+    <td><div class="nm">${esc(x.n)}</div><div class="mut">${esc(x.so)}${x.t?' · '+esc(x.t):''}${x.f?' · <span title="No viene en los archivos de 2 y 4.5 km; agregada del catálogo SIC con distancia calculada" style="color:#8C6A24;font-weight:600">SIC</span>':''}</div></td>
     <td class="hide-m">${esc(x.ti)}</td>
     <td>${esc(x.as)}${x.cp?`<div class="mut">CP ${esc(x.cp)}</div>`:''}</td>
     <td class="hide-m">${esc(x.lc)}<div class="mut">${esc(x.mu)}</div></td>

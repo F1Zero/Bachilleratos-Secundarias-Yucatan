@@ -20,7 +20,7 @@ from openpyxl.chart.label import DataLabelList
 from openpyxl.comments import Comment
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(AQUI, "Resumen Bachilleratos y Secundarias 2027.xlsx")
+OUT = os.path.join(AQUI, os.environ.get("SALIDA", "Resumen Bachilleratos y Secundarias 2027.xlsx"))
 URL_PAGINA = "https://f1zero.github.io/Bachilleratos-Secundarias-Yucatan/"
 R2, R45, RX = "≤ 2 km", "2 a 4.5 km", "Más cercano (> 4.5 km)"   # valores de la columna Radio
 
@@ -139,6 +139,8 @@ for i, (m, x, k, ru, rad) in enumerate(pares):
     r = r0 + i
     if rad == RX:
         fuente = "Cobertura: plantel más cercano (sin plantel a 4.5 km)"
+    elif x.get("f") == "SIC":
+        fuente = "Agregada del SIC (calculado)"
     elif rad == R2:
         fuente = "Calculado" if m.get("h2") == 2 else "Archivo de 2 km"
     else:
@@ -150,7 +152,7 @@ for i, (m, x, k, ru, rad) in enumerate(pares):
                    x.get("as", ""), x.get("cp", ""), fuente, gmaps_ruta(r, "Y", "Z", "AA", "AB"),
                    m["la"], m["lo"], x["la"], x["lo"]])
 encabezado(wsD, "Detalle plantel – secundaria",
-           "Una fila por par: secundarias a 4.5 km o menos en línea recta (archivos de 2 km y 4.5 km) y, para que toda secundaria tenga bachillerato, "
+           "Una fila por par: secundarias activas a 4.5 km o menos en línea recta (archivos de 2 km y 4.5 km y activas del SIC) y, para que toda secundaria tenga bachillerato, "
            "las que no tienen plantel a 4.5 km asignadas al más cercano. Orden: municipio, zona, subsistema, plantel y distancia lineal de menor a mayor.", len(hdrD))
 ultD = tabla(wsD, "tDetalle", hdrD, filasD,
              [12, 18, 34, 13, 16, 20, 18, 9, 13, 10, 10, 9, 9, 13, 34, 12, 16, 14, 16, 20, 22, 8, 22, 10, 10, 10, 10, 10],
@@ -221,7 +223,7 @@ for i, x in enumerate(sorted(SEC, key=lambda x: (x.get("mu", ""), x.get("lc", ""
                    f'=IFERROR(INDEX({R("K")},MATCH(1,INDEX(({R("N")}=A{r})*({R("J")}=O{r}),0),0)),"")',
                    gmaps_punto(r, "R", "S"), x["la"], x["lo"]])
 encabezado(wsC, "Cobertura de secundarias",
-           f"{len(SEC)} secundarias de los archivos de 2 km y 4.5 km (públicas, particulares y CONAFE). Todas tienen al menos un plantel asignado.", len(hdrC))
+           f"{len(SEC)} secundarias activas del catálogo SIC (por clave y turno; públicas, particulares y CONAFE). Todas tienen al menos un plantel asignado.", len(hdrC))
 ultC = tabla(wsC, "tSecundarias", hdrC, filasC, [13, 34, 12, 16, 13, 16, 20, 22, 8, 10, 10, 11, 13, 32, 11, 11, 11, 10, 10],
              formatos={10: "0", 11: "0", 12: "0", 15: "0.00", 16: "0.00", 18: "0.000000", 19: "0.000000"})
 liga(wsC, 17, r0, ultC)
@@ -398,7 +400,7 @@ fa = 8
 seccion(fa, "4. Cobertura de secundarias", col=10)
 cab(fa + 1, ["Concepto", "Secundarias", "% del total"], col0=10)
 wsT.merge_cells(start_row=fa + 1, start_column=12, end_row=fa + 1, end_column=13)
-filas4 = [("Secundarias en los archivos", f"=COUNTA({RC('A')})"),
+filas4 = [("Secundarias activas", f"=COUNTA({RC('A')})"),
           ("Con plantel a 2 km o menos", f'=COUNTIF({RC("J")},">0")'),
           ("Con plantel a 4.5 km o menos", f'=COUNTIF({RC("K")},">0")'),
           ("Sin plantel a 4.5 km (al más cercano)", f'=COUNTIF({R("I")},"{RX}")'),
@@ -506,7 +508,10 @@ notas = [
     ("Zona", "Zona Metropolitana = municipios de Mérida, Kanasín, Umán, Conkal y Ucú; el resto, Interior del Estado."),
     ("Secundarias a 2 km", "«Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical»: secundarias a 2 km o menos de cada plantel, con asentamiento INEGI."),
     ("Secundarias a 4.5 km", "«4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2.xlsx», hoja 1. Las de 4.5 km incluyen las de 2 km."),
-    ("Criterio de asignación", f"Máximo 4.5 km en línea recta, sin tope por plantel. Toda secundaria de los archivos de 2 y 4.5 km debe tener bachillerato: "
+    ("Universo de secundarias", f"Solo secundarias activas del catálogo SIC (NIVEL 04, STATUS 1). Se quitaron las de los archivos que ya no están activas y se agregaron "
+                                f"las {sum(1 for x in SEC if x.get('f') == 'SIC')} activas que no vienen en los archivos de 2 y 4.5 km, con su distancia en línea recta calculada a los planteles "
+                                "(Fuente = «Agregada del SIC (calculado)»)."),
+    ("Criterio de asignación", f"Máximo 4.5 km en línea recta, sin tope por plantel. Toda secundaria activa debe tener bachillerato: "
                                f"las {n_x} que no tienen ningún plantel a 4.5 km se asignan a su plantel más cercano en línea recta "
                                f"(Radio = «{RX}»; ▲ en «Vista por Plantel»)."),
     ("Planteles calculados", f"{len(calc)} planteles no vienen en el archivo de 2 km o de 4.5 km; sus secundarias se calcularon con las mismas secundarias y la distancia "

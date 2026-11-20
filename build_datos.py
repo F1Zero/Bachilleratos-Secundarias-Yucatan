@@ -250,20 +250,62 @@ print("Planteles de la lista 2027:", len(ms27), "| sin datos en los archivos de 
       sum(1 for c in claves27 if c not in por10), "| zonas:", dict(collections.Counter(m["zo"] for m in ms27)))
 ms = ms27
 
+# ---------------- Solo secundarias activas del catálogo SIC ----------------
+# Se quitan las secundarias de los archivos que no están activas en el SIC (NIVEL 04, STATUS 1) y se agregan
+# las activas que no vienen en los archivos; a estas se les calcula la distancia a los 353 planteles (campo f="SIC").
+activas = {}
+for d in cat.values():
+    if s(d.get("NIVEL")) == "04" and s(d.get("STATUS")) == "1":
+        activas.setdefault(s(d["CLAVECCT"]), d)
+bajas = {i for i, x in enumerate(sec) if x["c"][:10] not in activas}
+for m in ms:
+    m["s2"] = [p for p in m["s2"] if p[0] not in bajas]
+    m["s45"] = [p for p in m["s45"] if p[0] not in bajas]
+
+
+def tipo_sec(c10):
+    if c10[2] == "K":
+        return "CONAFE"
+    return {"TV": "TELESECUNDARIA", "ST": "TECNICA", "SN": "PARA TRABAJADORES"}.get(c10[3:5], "GENERAL")
+
+
+en_arch = {x["c"][:10] for x in sec}
+n_nuevas = 0
+for c10, d in sorted(activas.items()):
+    la, lo = num(d.get("LATITUD")), num(d.get("LONGITUD"))
+    if c10 in en_arch or not la:
+        continue
+    so = "CONAFE" if c10[2] == "K" else "PRIVADO" if c10[2] == "P" else "PÚBLICO"
+    i = get_sec(c10 + s(d.get("TURNO"))[:1], s(d.get("NOMBRECT")), la, lo, tipo_sec(c10), so)
+    sec[i]["f"] = "SIC"
+    for m in ms:
+        if m["la"]:
+            k = round(dist_km(m["la"], m["lo"], la, lo), 2)
+            if k <= 4.5:
+                m["s45"].append([i, k])
+            if k <= 2:
+                m["s2"].append([i, k])
+    n_nuevas += 1
+for m in ms:
+    m["s2"].sort(key=lambda x: x[1])
+    m["s45"].sort(key=lambda x: x[1])
+print(f"Secundarias activas en el SIC: {len(activas)} | quitadas por no estar activas: {len(bajas)} | "
+      f"agregadas del SIC (no venían en los archivos): {n_nuevas}")
+
 # ---------------- Cobertura total ----------------
-# Toda secundaria de los archivos de 2 y 4.5 km debe tener bachillerato: si no tiene ningún plantel
-# a 4.5 km o menos, se asigna a su plantel más cercano en línea recta (lista "sx").
+# Toda secundaria activa debe tener bachillerato: si no tiene ningún plantel a 4.5 km o menos,
+# se asigna a su plantel más cercano en línea recta (lista "sx").
 cubiertas = {i for m in ms for i, _ in m["s2"] + m["s45"]}
 for m in ms:
     m["sx"] = []
 n_sin = 0
 for i, x in enumerate(sec):
-    if i in cubiertas or not x["la"]:
+    if i in cubiertas or i in bajas or not x["la"]:
         continue
     m, dk = min(((m, dist_km(m["la"], m["lo"], x["la"], x["lo"])) for m in ms if m["la"]), key=lambda z: z[1])
     m["sx"].append([i, round(dk, 2)])
     n_sin += 1
-print(f"Secundarias en los archivos: {len(sec)} | con plantel a 4.5 km o menos: {len(cubiertas)} | "
+print(f"Secundarias (CCT y turno): {len(sec) - len(bajas)} | con plantel a 4.5 km o menos: {len(cubiertas)} | "
       f"asignadas al plantel más cercano (fuera de 4.5 km): {n_sin}")
 
 # Reindexar secundarias (todas quedan asignadas)

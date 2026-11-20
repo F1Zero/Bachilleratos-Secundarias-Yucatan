@@ -15,7 +15,8 @@ Página interactiva para consultar los planteles de bachillerato del proceso de 
 ## Criterio
 
 - Máximo **4.5 km** en línea recta, sin tope de secundarias por plantel.
-- **Toda secundaria tiene bachillerato:** las secundarias de los archivos que no tienen ningún plantel a 4.5 km se asignan a su plantel más cercano en línea recta (aparecen en la ficha de ese plantel).
+- **Solo secundarias activas** del catálogo SIC (nivel secundaria, status activo). Las activas que no vienen en los archivos de 2 y 4.5 km se agregan con distancia en línea recta calculada (marcadas con «SIC» en la página).
+- **Toda secundaria tiene bachillerato:** las secundarias que no tienen ningún plantel a 4.5 km se asignan a su plantel más cercano en línea recta (aparecen en la ficha de ese plantel).
 
 ## Fuentes
 
