@@ -6,19 +6,25 @@ Página interactiva para consultar los planteles de bachillerato del proceso de 
 
 ## Qué hace
 
-- Filtra por municipio, localidad, zona (Metropolitana / Interior), subsistema o búsqueda libre (CCT, nombre, asentamiento, especialidad).
+- Filtra por municipio, localidad, zona (Metropolitana / Interior), subsistema o búsqueda libre (CCT, nombre, asentamiento).
 - Muestra un resumen: número de planteles, matrícula y secundarias distintas a 2 km y a 4.5 km.
-- Al elegir un plantel muestra su ficha (incluye especialidades) y dos listas de secundarias (a 2 km y a 4.5 km), con asentamiento, CP, localidad, municipio, distancia lineal y distancia por ruta.
+- Al elegir un plantel muestra su ficha y dos listas de secundarias (a 2 km y a 4.5 km), con asentamiento, CP, localidad, municipio, distancia lineal y distancia por ruta.
 - Mapa con los radios de 2 km y 4.5 km y las secundarias alrededor.
 - Descarga en CSV del resumen y de las secundarias de cada plantel.
 
+## Criterio
+
+- Máximo **4.5 km** en línea recta, sin tope de secundarias por plantel.
+- **Toda secundaria tiene bachillerato:** las secundarias de los archivos que no tienen ningún plantel a 4.5 km se asignan a su plantel más cercano en línea recta (aparecen en la ficha de ese plantel).
+
 ## Fuentes
 
-- **Planteles:** «Asignación Secundarias Promoción Bachillerato 2027», hoja «Vista por Bachillerato» (353 planteles). Solo se incluyen estos planteles; nombre, subsistema, turno, municipio, localidad y zona vienen de esa lista.
+- **Planteles:** los 353 planteles de la lista del proceso de ingreso 2027 (de esa lista solo se toma qué planteles se usan).
+- **Datos de los planteles** (nombre, subsistema, turno, municipio, localidad, ubicación): catálogo SIC y archivos de 2 y 4.5 km. Matrícula y docentes: archivo de 2 km.
+- **Zona:** Zona Metropolitana = municipios de Mérida, Kanasín, Umán, Conkal y Ucú; el resto, Interior del Estado.
 - **2 km:** «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical».
 - **4.5 km:** «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2», hoja 1.
-- Los planteles que no vienen en el archivo de 2 km o de 4.5 km (Bachilleratos Nacionales «Margarita Maza», Bachillerato Tecnológico Metropolitano y UTR del Sur) se calcularon con las mismas secundarias y la distancia en línea recta (aproximado; marcados con \*).
-- **Ubicación (municipio, localidad, asentamiento, domicilio):** catálogo SIC.
+- Los planteles que no vienen en el archivo de 2 km o de 4.5 km se calcularon con las mismas secundarias y la distancia en línea recta (aproximado; marcados con \*).
 - **Distancia por ruta:** camino más corto en auto por carreteras y calles, calculado con [OSRM](https://project-osrm.org/) sobre datos de OpenStreetMap. Se guarda en `rutas_osrm.json` para no volver a consultar el servicio.
 
 ## Regenerar
@@ -28,5 +34,7 @@ py build_datos.py
 ```
 
 Genera `index.html` (y `Bachilleratos y Secundarias.html`) a partir de `_template.html` y los archivos de Excel (rutas al inicio del script). Requiere `openpyxl` y `pyxlsb`. Solo consulta OSRM para los pares plantel–secundaria que no estén en `rutas_osrm.json`.
+
+El resumen en Excel se genera con `py excel_resumen.py` (requiere Excel y `pywin32`).
 
 Departamento de Estudios Territoriales · SEGEY

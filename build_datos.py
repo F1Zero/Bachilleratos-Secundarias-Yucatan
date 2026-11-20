@@ -193,19 +193,16 @@ for m in ms:
     m["s45"].sort(key=lambda x: x[1])
     m["s2"].sort(key=lambda x: x[1])
 
-# ---------------- Lista 2027: solo los planteles de "Vista por Bachillerato" ----------------
-# Un registro por plantel (CCT de 10 caracteres). Nombre, subsistema, turno, municipio,
-# localidad y zona se toman de la lista 2027 para que coincidan con su tabla dinámica.
+# ---------------- Planteles: solo los 353 de la lista 2027 ----------------
+# Del archivo de asignación 2027 SOLO se toma qué planteles se usan (su lista de claves CCT).
+# Todos los datos de cada plantel salen de los archivos originales (4.5 km, 2 km) y del catálogo SIC.
+# Zona: regla por municipio (Zona Metropolitana = Mérida, Kanasín, Umán, Conkal y Ucú).
+ZM_MUN = {"MÉRIDA", "KANASÍN", "UMÁN", "CONKAL", "UCÚ"}
 wb27 = openpyxl.load_workbook(F27, read_only=True, data_only=True)
-lista27 = [r for r in wb27["Vista por Bachillerato"].iter_rows(min_row=5, values_only=True) if r[0]]
+claves27 = [s(r[0]) for r in wb27["Vista por Bachillerato"].iter_rows(min_row=5, values_only=True) if r[0]]
 por10 = collections.defaultdict(list)
 for m in ms:
     por10[m["c"][:10]].append(m)
-
-
-def turno27(v):
-    v = s(v)
-    return {"120": "Matutino y vespertino", "123": "Matutino, vespertino y nocturno"}.get(v, v.capitalize())
 
 
 def radio(m, km):
@@ -214,10 +211,9 @@ def radio(m, km):
 
 
 ms27 = []
-for r in lista27:
-    c10 = s(r[0])
-    grupo = por10.get(c10, [])
-    if grupo:
+for c10 in claves27:
+    grupo = sorted(por10.get(c10, []), key=lambda g: g["c"])
+    if grupo:  # uno o varios turnos del mismo plantel: se unen
         o = dict(grupo[0])
         d2, d45 = {}, {}
         for g in grupo:
@@ -234,27 +230,49 @@ for r in lista27:
         o.pop("h2", None)
         if con2 and all(g.get("h2") == 2 for g in con2):
             o["h2"] = 2
-    else:  # plantel nuevo: ubicación del catálogo SIC y radios calculados
+        ts = list(dict.fromkeys(g["t"] for g in grupo if g["t"]))
+        o["t"] = " y ".join(ts)
+    else:  # plantel que no viene en los archivos de 2 y 4.5 km: datos del catálogo SIC y radios calculados
         d = cat10.get(c10) or {}
-        o = {"c": c10, "la": round(num(d.get("LATITUD")) or 0, 6), "lo": round(num(d.get("LONGITUD")) or 0, 6),
+        o = {"c": c10, "n": s(d.get("NOMBRECT")), "sb": s(d.get("SOSTENIMIE")) or "SIN DATO",
+             "t": TURNOS.get(s(d.get("TURNO"))[:1], ""), "mu": s(d.get("N_MUNICIPIO")), "lc": s(d.get("N_LOCALIDAD")),
+             "la": round(num(d.get("LATITUD")) or 0, 6), "lo": round(num(d.get("LONGITUD")) or 0, 6),
              "as": s(d.get("ASENTAMIEN")), "cp": s(d.get("CODPOST")), "do": domicilio(d) if d else "",
              "te": s(d.get("TELEFONO")), "fi": s(d.get("SOSTENIMIE")), "ma": None, "dc": None}
         o["s2"], o["s45"] = radio(o, 2), radio(o, 4.5)
         o["h2"], o["h45"] = 2, 2
-    o.update({"c": c10, "n": s(r[2]), "sb": s(r[1]), "t": turno27(r[3]), "mu": s(r[4]), "lc": s(r[5]),
-              "zo": s(r[6]), "es": s(r[7]), "so": "PÚBLICO"})
+    o["c"] = c10
+    o["zo"] = "Zona Metropolitana" if o["mu"] in ZM_MUN else "Interior del Estado"
+    o["so"] = "PÚBLICO"
+    o.pop("es", None)
     ms27.append(o)
-print("Lista 2027:", len(ms27), "planteles | nuevos (sin datos previos):",
-      sum(1 for r in lista27 if s(r[0]) not in por10))
+print("Planteles de la lista 2027:", len(ms27), "| sin datos en los archivos de 2 y 4.5 km:",
+      sum(1 for c in claves27 if c not in por10), "| zonas:", dict(collections.Counter(m["zo"] for m in ms27)))
 ms = ms27
 
-# Quitar secundarias que ya no están alrededor de ningún plantel y reindexar
-usadas = sorted({i for m in ms for i, _ in m["s2"] + m["s45"]})
+# ---------------- Cobertura total ----------------
+# Toda secundaria de los archivos de 2 y 4.5 km debe tener bachillerato: si no tiene ningún plantel
+# a 4.5 km o menos, se asigna a su plantel más cercano en línea recta (lista "sx").
+cubiertas = {i for m in ms for i, _ in m["s2"] + m["s45"]}
+for m in ms:
+    m["sx"] = []
+n_sin = 0
+for i, x in enumerate(sec):
+    if i in cubiertas or not x["la"]:
+        continue
+    m, dk = min(((m, dist_km(m["la"], m["lo"], x["la"], x["lo"])) for m in ms if m["la"]), key=lambda z: z[1])
+    m["sx"].append([i, round(dk, 2)])
+    n_sin += 1
+print(f"Secundarias en los archivos: {len(sec)} | con plantel a 4.5 km o menos: {len(cubiertas)} | "
+      f"asignadas al plantel más cercano (fuera de 4.5 km): {n_sin}")
+
+# Reindexar secundarias (todas quedan asignadas)
+usadas = sorted({i for m in ms for i, _ in m["s2"] + m["s45"] + m["sx"]})
 nuevo_idx = {v: k for k, v in enumerate(usadas)}
 sec = [sec[i] for i in usadas]
 for m in ms:
-    m["s2"] = [[nuevo_idx[i], k] for i, k in m["s2"]]
-    m["s45"] = [[nuevo_idx[i], k] for i, k in m["s45"]]
+    for key in ("s2", "s45", "sx"):
+        m[key] = sorted(([nuevo_idx[i], k] for i, k in m[key]), key=lambda z: z[1])
 
 # ---------------- Distancia por ruta (OSRM / OpenStreetMap, en auto) ----------------
 # Se guarda en rutas_osrm.json para no volver a consultar el servicio.
@@ -265,7 +283,7 @@ except (OSError, ValueError):
     cache = {}
 pend = 0
 for k, m in enumerate(ms):
-    destinos = sorted({i for i, _ in m["s2"] + m["s45"]})
+    destinos = sorted({i for i, _ in m["s2"] + m["s45"] + m["sx"]})
     ya = cache.setdefault(m["c"], {})
     faltan = [i for i in destinos if sec[i]["c"] not in ya]
     for a in range(0, len(faltan), 90):
@@ -298,6 +316,7 @@ for m in ms:
     ru = cache.get(m["c"], {})
     m["s2"] = [[i, k, ru.get(sec[i]["c"])] for i, k in m["s2"]]
     m["s45"] = [[i, k, ru.get(sec[i]["c"])] for i, k in m["s45"]]
+    m["sx"] = [[i, k, ru.get(sec[i]["c"])] for i, k in m["sx"]]
 
 print("Bachilleratos:", len(ms), "| con sec 4.5 km:", sum(1 for m in ms if m["s45"]),
       "| con sec 2 km:", sum(1 for m in ms if m["s2"]))

@@ -145,7 +145,7 @@ tr.sel{background:#fff7e6!important}
           </table>
         </div>
       </div>
-      <div class="nota">Toca un bachillerato para ver sus secundarias en el mapa. Solo se incluyen los planteles de la «Vista por Bachillerato» del proceso de ingreso 2027. * = calculado con las mismas secundarias porque el plantel no viene en el archivo de 2 km o de 4.5 km.</div>
+      <div class="nota">Toca un bachillerato para ver sus secundarias en el mapa. Solo se incluyen los planteles del proceso de ingreso 2027. * = calculado con las mismas secundarias porque el plantel no viene en el archivo de 2 km o de 4.5 km.</div>
     </div>
 
     <div id="detalle">
@@ -179,7 +179,7 @@ tr.sel{background:#fff7e6!important}
           </table>
         </div>
       </div>
-      <div class="nota">Distancias en km. Lineal = línea recta; Ruta = camino más corto en auto por carretera y calles (OSRM con datos de OpenStreetMap). Fuentes: planteles — «Asignación Secundarias Promoción Bachillerato 2027» (Vista por Bachillerato); 2 km — «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical»; 4.5 km — «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2» (hoja 1); ubicación — catálogo SIC.</div>
+      <div class="nota">Distancias en km. Lineal = línea recta; Ruta = camino más corto en auto por carretera y calles (OSRM con datos de OpenStreetMap). Fuentes: lista de planteles del proceso de ingreso 2027 (solo qué planteles); 2 km — «Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical»; 4.5 km — «4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2» (hoja 1); datos de planteles y ubicación — catálogo SIC. Zona Metropolitana = Mérida, Kanasín, Umán, Conkal y Ucú. Toda secundaria sin plantel a 4.5 km se asigna al más cercano (se indica en la ficha).</div>
     </div>
   </section>
   <section id="mapwrap"><div id="map"></div></section>
@@ -195,7 +195,7 @@ const fmt=n=>(n==null||n==='')?'–':Number(n).toLocaleString('es-MX');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
 MS.forEach((m,i)=>{m.i=i;m.n2=m.s2.length;m.n45=m.h45?m.s45.length:-1;
-  m.q=norm([m.c,m.n,m.sb,m.as,m.lc,m.mu,m.cp,m.es].join(' '));});
+  m.q=norm([m.c,m.n,m.sb,m.as,m.lc,m.mu,m.cp].join(' '));});
 const C2='#AB2240', C45='#B08D3C', C45T='#8C6A24';
 const colZona={'Zona Metropolitana':'#7A1830','Interior del Estado':'#047857'};
 
@@ -319,7 +319,8 @@ function seleccionar(i,zoom){
   const f=(l,v)=>v?`<div><span>${l}</span>${esc(v)}</div>`:'';
   $('dInfo').innerHTML=f('Municipio',m.mu)+f('Localidad',m.lc)+f('Asentamiento',m.as)+f('Código postal',m.cp)
     +f('Domicilio',m.do)+f('Teléfono',m.te)+f('Coordenadas',m.la?`${m.la}, ${m.lo}`:'')
-    +(m.es?`<div style="grid-column:1/-1"><span>Especialidades</span>${esc(m.es.split('|').map(x=>x.trim()).join(' · '))}</div>`:'');
+    +((m.sx||[]).length?`<div style="grid-column:1/-1;color:#B91C1C"><span>Asignadas por cobertura (sin plantel a 4.5 km)</span>${
+      m.sx.map(([s,k,r])=>`${esc(SEC[s].c)} · ${esc(SEC[s].n)} · ${k.toFixed(2)} km lineal${r==null?'':' / '+r.toFixed(2)+' km ruta'}`).join('<br>')}</div>`:'');
   $('d2').textContent=m.n2;$('d45').textContent=m.n45<0?'–':m.n45;
   $('dMat').textContent=fmt(m.ma);$('dDoc').textContent=fmt(m.dc);
   $('tn2').textContent=m.n2;$('tn45').textContent=m.n45<0?'–':m.n45;
@@ -394,8 +395,8 @@ function csv(nombre,filas){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
   a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
 }
-$('bCsvLista').onclick=()=>csv('resumen_bachilleratos.csv',[['CCT','Bachillerato','Turno','Zona','Subsistema','Municipio','Localidad','Asentamiento','CP','Especialidades','Matrícula','Docentes','Secundarias a 2 km','Fuente 2 km','Secundarias a 4.5 km','Fuente 4.5 km','Latitud','Longitud']]
-  .concat(actual.map(m=>[m.c,m.n,m.t,m.zo,m.sb,m.mu,m.lc,m.as,m.cp,m.es,m.ma,m.dc,m.n2,m.h2===2?'Calculado':'Archivo 2 km',m.n45<0?'':m.n45,m.h45===2?'Calculado':'Hoja 1',m.la,m.lo])));
+$('bCsvLista').onclick=()=>csv('resumen_bachilleratos.csv',[['CCT','Bachillerato','Turno','Zona','Subsistema','Municipio','Localidad','Asentamiento','CP','Matrícula','Docentes','Secundarias a 2 km','Fuente 2 km','Secundarias a 4.5 km','Fuente 4.5 km','Latitud','Longitud']]
+  .concat(actual.map(m=>[m.c,m.n,m.t,m.zo,m.sb,m.mu,m.lc,m.as,m.cp,m.ma,m.dc,m.n2,m.h2===2?'Calculado':'Archivo 2 km',m.n45<0?'':m.n45,m.h45===2?'Calculado':'Hoja 1',m.la,m.lo])));
 $('bCsvDet').onclick=()=>{const m=MS[st.sel];const enDos=new Set(m.s2.map(x=>x[0]));
   csv(`secundarias_${m.c}.csv`,[['Bachillerato CCT','Bachillerato','Radio','CCT secundaria','Secundaria','Tipo','Sostenimiento','Turno','Asentamiento','CP','Localidad','Municipio','Distancia lineal km','Distancia ruta km','Latitud','Longitud']]
   .concat(lista(m).sort((a,b)=>a.k-b.k).map(({s,k,r})=>{const x=SEC[s];return [m.c,m.n,enDos.has(s)?'2 km':'4.5 km',x.c,x.n,x.ti,x.so,x.t,x.as,x.cp,x.lc,x.mu,k,r,x.la,x.lo];})));};
