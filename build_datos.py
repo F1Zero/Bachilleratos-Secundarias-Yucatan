@@ -11,8 +11,7 @@ from pyxlsb import open_workbook
 AQUI = os.path.dirname(os.path.abspath(__file__))
 F45 = r"C:\Users\SEP\Documents\4.5KM-MEDIA SUPERIOR Y SECUNDARIASv2.xlsx"
 F2 = r"F:\Descargas\Presentación 31ES INEGI Media Superior Escuelas Secundaria Vertical.xlsx"
-FCAT = (r"C:\Users\SEP\AppData\Roaming\Microsoft\Excel\a_ctba_sic_v2-20261103v2312914373413578445"
-        r"\a_ctba_sic_v2-20261103v2((Autorecovered-312914031905818769)).xlsb")
+FCAT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datos", "a_ctba_sic_v2-20261103v2.xlsb")  # copia fija del catálogo SIC (no se sube a GitHub)
 LIBS = r"C:\Users\SEP\Documents\Proyecto_SIG_Portable\Mapa de Escuelas V2\_libs"
 LOGO = r"C:\Users\SEP\Documents\Proyecto_SIG_Portable\Mapa de Escuelas V2\logo.png"
 F27 = r"F:\Descargas\Asignacion_Secundarias_Promocion_Bachillerato_2027-v3.xlsx"

@@ -58,7 +58,7 @@ for d in fuera:
                   "ti": tipo(cct), "so": sost(d, cct), "mu": s(d.get("N_MUNICIPIO")), "lc": s(d.get("N_LOCALIDAD")),
                   "as": s(d.get("ASENTAMIEN")), "cp": s(d.get("CODPOST")), "do": domicilio(d),
                   "la": round(la, 6), "lo": round(lo, 6), "m": m, "k": round(k, 2),
-                  "n2": sum(1 for z, _ in ds if z <= 2), "n45": sum(1 for z, _ in ds if z <= 4.5)})
+                  "n2": sum(1 for z, _ in ds if round(z, 2) <= 2), "n45": sum(1 for z, _ in ds if round(z, 2) <= 4.5)})
 filas.sort(key=lambda f: (f["mu"], f["lc"], f["k"], f["c"]))
 print(f"SIC secundarias activas: {len(activas)} | en archivos: {len(activas) - len(fuera)} | sin bachillerato: {len(fuera)} | "
       f"con plantel a 4.5 km: {sum(1 for f in filas if f['n45'])} | bajas en archivos: {len(bajas)}")
