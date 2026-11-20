@@ -4,7 +4,7 @@
 
 Uso:  py build_datos.py
 """
-import os, json, math, base64, collections
+import os, json, math, base64, collections, time, urllib.request
 import openpyxl
 from pyxlsb import open_workbook
 
@@ -15,6 +15,8 @@ FCAT = (r"C:\Users\SEP\AppData\Roaming\Microsoft\Excel\a_ctba_sic_v2-20261103v23
         r"\a_ctba_sic_v2-20261103v2((Autorecovered-312914031905818769)).xlsb")
 LIBS = r"C:\Users\SEP\Documents\Proyecto_SIG_Portable\Mapa de Escuelas V2\_libs"
 LOGO = r"C:\Users\SEP\Documents\Proyecto_SIG_Portable\Mapa de Escuelas V2\logo.png"
+F27 = r"F:\Descargas\Asignacion_Secundarias_Promocion_Bachillerato_2027-v3.xlsx"
+RUTAS = os.path.join(AQUI, "rutas_osrm.json")
 TEMPLATE = os.path.join(AQUI, "_template.html")
 OUT = os.path.join(AQUI, "Bachilleratos y Secundarias.html")
 
@@ -190,6 +192,112 @@ for m in ms:
     m["lc"] = m["lc"] or "SIN DATO"
     m["s45"].sort(key=lambda x: x[1])
     m["s2"].sort(key=lambda x: x[1])
+
+# ---------------- Lista 2027: solo los planteles de "Vista por Bachillerato" ----------------
+# Un registro por plantel (CCT de 10 caracteres). Nombre, subsistema, turno, municipio,
+# localidad y zona se toman de la lista 2027 para que coincidan con su tabla dinámica.
+wb27 = openpyxl.load_workbook(F27, read_only=True, data_only=True)
+lista27 = [r for r in wb27["Vista por Bachillerato"].iter_rows(min_row=5, values_only=True) if r[0]]
+por10 = collections.defaultdict(list)
+for m in ms:
+    por10[m["c"][:10]].append(m)
+
+
+def turno27(v):
+    v = s(v)
+    return {"120": "Matutino y vespertino", "123": "Matutino, vespertino y nocturno"}.get(v, v.capitalize())
+
+
+def radio(m, km):
+    return [[i, round(dist_km(m["la"], m["lo"], x["la"], x["lo"]), 2)]
+            for i, x in enumerate(sec) if dist_km(m["la"], m["lo"], x["la"], x["lo"]) <= km]
+
+
+ms27 = []
+for r in lista27:
+    c10 = s(r[0])
+    grupo = por10.get(c10, [])
+    if grupo:
+        o = dict(grupo[0])
+        d2, d45 = {}, {}
+        for g in grupo:
+            d2.update({i: k for i, k in g["s2"]})
+            d45.update({i: k for i, k in g["s45"]})
+        o["s2"] = sorted(([i, k] for i, k in d2.items()), key=lambda x: x[1])
+        o["s45"] = sorted(([i, k] for i, k in d45.items()), key=lambda x: x[1])
+        mats = [g["ma"] for g in grupo if g["ma"] is not None]
+        docs = [g["dc"] for g in grupo if g["dc"] is not None]
+        o["ma"] = sum(mats) if mats else None
+        o["dc"] = sum(docs) if docs else None
+        o["h45"] = 1 if any(g["h45"] == 1 for g in grupo) else 2
+        con2 = [g for g in grupo if g["s2"]]
+        o.pop("h2", None)
+        if con2 and all(g.get("h2") == 2 for g in con2):
+            o["h2"] = 2
+    else:  # plantel nuevo: ubicación del catálogo SIC y radios calculados
+        d = cat10.get(c10) or {}
+        o = {"c": c10, "la": round(num(d.get("LATITUD")) or 0, 6), "lo": round(num(d.get("LONGITUD")) or 0, 6),
+             "as": s(d.get("ASENTAMIEN")), "cp": s(d.get("CODPOST")), "do": domicilio(d) if d else "",
+             "te": s(d.get("TELEFONO")), "fi": s(d.get("SOSTENIMIE")), "ma": None, "dc": None}
+        o["s2"], o["s45"] = radio(o, 2), radio(o, 4.5)
+        o["h2"], o["h45"] = 2, 2
+    o.update({"c": c10, "n": s(r[2]), "sb": s(r[1]), "t": turno27(r[3]), "mu": s(r[4]), "lc": s(r[5]),
+              "zo": s(r[6]), "es": s(r[7]), "so": "PÚBLICO"})
+    ms27.append(o)
+print("Lista 2027:", len(ms27), "planteles | nuevos (sin datos previos):",
+      sum(1 for r in lista27 if s(r[0]) not in por10))
+ms = ms27
+
+# Quitar secundarias que ya no están alrededor de ningún plantel y reindexar
+usadas = sorted({i for m in ms for i, _ in m["s2"] + m["s45"]})
+nuevo_idx = {v: k for k, v in enumerate(usadas)}
+sec = [sec[i] for i in usadas]
+for m in ms:
+    m["s2"] = [[nuevo_idx[i], k] for i, k in m["s2"]]
+    m["s45"] = [[nuevo_idx[i], k] for i, k in m["s45"]]
+
+# ---------------- Distancia por ruta (OSRM / OpenStreetMap, en auto) ----------------
+# Se guarda en rutas_osrm.json para no volver a consultar el servicio.
+try:
+    with open(RUTAS, encoding="utf-8") as f:
+        cache = json.load(f)
+except (OSError, ValueError):
+    cache = {}
+pend = 0
+for k, m in enumerate(ms):
+    destinos = sorted({i for i, _ in m["s2"] + m["s45"]})
+    ya = cache.setdefault(m["c"], {})
+    faltan = [i for i in destinos if sec[i]["c"] not in ya]
+    for a in range(0, len(faltan), 90):
+        lote = faltan[a:a + 90]
+        coords = ";".join([f"{m['lo']},{m['la']}"] + [f"{sec[i]['lo']},{sec[i]['la']}" for i in lote])
+        url = f"https://router.project-osrm.org/table/v1/driving/{coords}?sources=0&annotations=distance"
+        for intento in range(4):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "bachilleratos-secundarias/1.0"})
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    res = json.load(resp)
+                break
+            except Exception as e:  # reintento con espera
+                print("  reintento", m["c"], e)
+                time.sleep(5 * (intento + 1))
+        else:
+            continue
+        fila = (res.get("distances") or [[]])[0][1:]
+        for i, dm in zip(lote, fila):
+            ya[sec[i]["c"]] = None if dm is None else round(dm / 1000, 2)
+        pend += 1
+        time.sleep(1.1)  # uso moderado del servidor público
+    if pend and pend % 25 == 0:
+        with open(RUTAS, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False)
+with open(RUTAS, "w", encoding="utf-8") as f:
+    json.dump(cache, f, ensure_ascii=False)
+print("Consultas OSRM nuevas:", pend)
+for m in ms:
+    ru = cache.get(m["c"], {})
+    m["s2"] = [[i, k, ru.get(sec[i]["c"])] for i, k in m["s2"]]
+    m["s45"] = [[i, k, ru.get(sec[i]["c"])] for i, k in m["s45"]]
 
 print("Bachilleratos:", len(ms), "| con sec 4.5 km:", sum(1 for m in ms if m["s45"]),
       "| con sec 2 km:", sum(1 for m in ms if m["s2"]))
